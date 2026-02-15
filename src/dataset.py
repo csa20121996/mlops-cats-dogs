@@ -1,5 +1,7 @@
 from torch.utils.data import Subset
 import random
+import torch
+import numpy as np
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, random_split
 from src.config import DATA_DIR, IMAGE_SIZE, BATCH_SIZE
@@ -11,6 +13,20 @@ def get_transforms():
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor()
     ])
+
+def preprocess_image(image: np.ndarray) -> torch.Tensor:
+    """
+    Preprocess a numpy image to tensor format expected by model.
+    """
+
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+        transforms.ToTensor()
+    ])
+
+    tensor = transform(image)
+    return tensor
 
 
 def get_dataloaders():

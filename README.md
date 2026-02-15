@@ -30,3 +30,20 @@ b1c9deda6c434f078b75230f51b65b53
 
 docker compose up -d
 
+
+minikube start --driver=docker
+
+kubectl apply -f k8s-deployment.yaml
+kubectl apply -f k8s-service.yaml
+
+
+start minikube server
+    minikube service mlops-service
+
+start mlflow
+    python -m mlflow ui
+
+
+prometheus
+    http://localhost:9090/query
+

@@ -1,0 +1,27 @@
+{
+  "title": "MLOps API Monitoring",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Total Requests",
+      "targets": [
+        {
+          "expr": "request_count"
+        }
+      ],
+      "datasource": "Prometheus"
+    },
+    {
+      "type": "graph",
+      "title": "Request Latency (seconds)",
+      "targets": [
+        {
+          "expr": "request_latency_seconds_sum"
+        }
+      ],
+      "datasource": "Prometheus"
+    }
+  ],
+  "schemaVersion": 27,
+  "version": 1
+}

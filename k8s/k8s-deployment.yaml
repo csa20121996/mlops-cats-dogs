@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlops-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlops
+  template:
+    metadata:
+      labels:
+        app: mlops
+    spec:
+      containers:
+        - name: mlops-container
+          image: ghcr.io/csa20121996/mlops-cats-dogs:latest
+          ports:
+            - containerPort: 8000

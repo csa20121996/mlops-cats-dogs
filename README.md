@@ -27,3 +27,6 @@ b1c9deda6c434f078b75230f51b65b53
         fullname: CHANDRA SHEKAR A
         EmailAddress: 2024ab05298@wilp.bits-pilani.ac.in
             URL: http://localhost:8080/
+
+docker compose up -d
+

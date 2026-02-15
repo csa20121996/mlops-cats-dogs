@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir setuptools==68.2.2 \
     && pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+COPY models/model.pt /app/models/model.pt
 
 EXPOSE 8000
 

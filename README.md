@@ -46,4 +46,6 @@ start mlflow
 
 prometheus
     http://localhost:9090/query
+grafana
+    http://localhost:3000/
 

@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
 
 jobs:
   build-and-push:
@@ -28,31 +26,21 @@ jobs:
           pip install setuptools==68.2.2
           pip install -r requirements.txt
 
-      - name: Run Tests with Coverage
-        run: pytest --cov=src --cov-report=xml
-
-      - name: Upload Coverage Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.xml
+      - name: Run Tests
+        run: pytest
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Extract Version
-        id: vars
+      - name: Set Version
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          else
-            echo "VERSION=latest" >> $GITHUB_ENV
-          fi
+          VERSION=v${{ github.run_number }}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build Docker Image
         run: |
           docker build -t ghcr.io/${{ github.repository }}:${{ env.VERSION }} .
-          docker build -t ghcr.io/${{ github.repository }}:latest .
+          docker tag ghcr.io/${{ github.repository }}:${{ env.VERSION }} ghcr.io/${{ github.repository }}:latest
 
       - name: Push Docker Images
         run: |

@@ -32,17 +32,19 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Fetching service URL..."
-          $url = (minikube service mlops-service --url | Select-Object -First 1).Trim()
+
+          # Run minikube service but ignore its exit code
+          $url = (minikube service mlops-service --url 2>$null | Select-Object -First 1).Trim()
+
           Write-Host "Service URL: $url"
-      
           $healthUrl = "$url/health"
           Write-Host "Testing: $healthUrl"
-      
+
           try {
               $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 20
               Write-Host "StatusCode: $($response.StatusCode)"
               Write-Host "Body: $($response.Content)"
-      
+
               if ($response.StatusCode -ne 200) {
                   throw "Health endpoint returned non-200"
               }
@@ -52,6 +54,8 @@ jobs:
               Write-Host $_.Exception.Message
               exit 1
           }
+
+          exit 0
 
 #      - name: Get Service URL
 #        shell: powershell

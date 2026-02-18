@@ -30,8 +30,12 @@ jobs:
 
       - name: Smoke Test
         run: |
-          $response = Invoke-WebRequest -Uri http://localhost:8000/health
-          if ($response.StatusCode -ne 200) { exit 1 }
+          try {
+            $response = Invoke-WebRequest -Uri "http://$env:MINIKUBE_IP:30007/health" -UseBasicParsing
+            if ($response.StatusCode -ne 200) { exit 1 }
+          } catch {
+            exit 1
+          }
 
       - name: Rollback on Failure
         if: failure()

@@ -29,11 +29,17 @@ jobs:
           Start-Sleep -Seconds 10
 
       - name: Smoke Test
+        shell: powershell
         run: |
+          Write-Host "Testing $env:SERVICE_URL/health"
           try {
-            $response = Invoke-WebRequest -Uri "http://$env:MINIKUBE_IP:30007/health" -UseBasicParsing
-            if ($response.StatusCode -ne 200) { exit 1 }
+            $r = Invoke-WebRequest -Uri "$env:SERVICE_URL/health" -UseBasicParsing -TimeoutSec 15
+            Write-Host "StatusCode=$($r.StatusCode)"
+            Write-Host "Body=$($r.Content)"
+            if ($r.StatusCode -ne 200) { throw "Non-200 status code" }
           } catch {
+            Write-Host "Smoke test failed:"
+            Write-Host $_.Exception.Message
             exit 1
           }
 

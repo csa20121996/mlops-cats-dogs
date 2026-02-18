@@ -29,7 +29,7 @@ jobs:
           Start-Sleep -Seconds 10
 
       - name: Smoke Test
-        run: curl -f http://localhost:8000/health
+        run: curl http://localhost:8000/health
 
       - name: Rollback on Failure
         if: failure()

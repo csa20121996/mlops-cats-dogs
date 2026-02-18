@@ -28,27 +28,52 @@ jobs:
           Start-Process kubectl -ArgumentList "port-forward service/mlops-service 8000:8000"
           Start-Sleep -Seconds 10
 
-      - name: Get Service URL
+      - name: Smoke Test via Minikube Service
         shell: powershell
         run: |
+          Write-Host "Fetching service URL..."
           $url = (minikube service mlops-service --url | Select-Object -First 1).Trim()
-          Write-Host "Service URL detected: $url"
-          Add-Content -Path $env:GITHUB_ENV -Value "SERVICE_URL=$url"
-
-      - name: Smoke Test
-        shell: powershell
-        run: |
-          Write-Host "Testing $env:SERVICE_URL/health"
+          Write-Host "Service URL: $url"
+      
+          $healthUrl = "$url/health"
+          Write-Host "Testing: $healthUrl"
+      
           try {
-            $r = Invoke-WebRequest -Uri "$env:SERVICE_URL/health" -UseBasicParsing -TimeoutSec 15
-            Write-Host "StatusCode=$($r.StatusCode)"
-            Write-Host "Body=$($r.Content)"
-            if ($r.StatusCode -ne 200) { throw "Non-200 status code" }
-          } catch {
-            Write-Host "Smoke test failed:"
-            Write-Host $_.Exception.Message
-            exit 1
+              $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 20
+              Write-Host "StatusCode: $($response.StatusCode)"
+              Write-Host "Body: $($response.Content)"
+      
+              if ($response.StatusCode -ne 200) {
+                  throw "Health endpoint returned non-200"
+              }
           }
+          catch {
+              Write-Host "Smoke test failed:"
+              Write-Host $_.Exception.Message
+              exit 1
+          }
+
+#      - name: Get Service URL
+#        shell: powershell
+#        run: |
+#          $url = (minikube service mlops-service --url | Select-Object -First 1).Trim()
+#          Write-Host "Service URL detected: $url"
+#          Add-Content -Path $env:GITHUB_ENV -Value "SERVICE_URL=$url"
+#
+#      - name: Smoke Test
+#        shell: powershell
+#        run: |
+#          Write-Host "Testing $env:SERVICE_URL/health"
+#          try {
+#            $r = Invoke-WebRequest -Uri "$env:SERVICE_URL/health" -UseBasicParsing -TimeoutSec 15
+#            Write-Host "StatusCode=$($r.StatusCode)"
+#            Write-Host "Body=$($r.Content)"
+#            if ($r.StatusCode -ne 200) { throw "Non-200 status code" }
+#          } catch {
+#            Write-Host "Smoke test failed:"
+#            Write-Host $_.Exception.Message
+#            exit 1
+#          }
 
       - name: Rollback on Failure
         if: failure()

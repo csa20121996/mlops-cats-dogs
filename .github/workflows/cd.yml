@@ -28,6 +28,13 @@ jobs:
           Start-Process kubectl -ArgumentList "port-forward service/mlops-service 8000:8000"
           Start-Sleep -Seconds 10
 
+      - name: Get Service URL
+        shell: powershell
+        run: |
+          $url = (minikube service mlops-service --url | Select-Object -First 1).Trim()
+          Write-Host "Service URL detected: $url"
+          Add-Content $env:GITHUB_ENV "SERVICE_URL=$url"
+
       - name: Smoke Test
         shell: powershell
         run: |

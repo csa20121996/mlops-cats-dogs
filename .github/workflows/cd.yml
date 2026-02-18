@@ -25,8 +25,8 @@ jobs:
 
       - name: Port Forward
         run: |
-          kubectl port-forward service/mlops-service 8000:8000 &
-          sleep 10
+          Start-Process kubectl -ArgumentList "port-forward service/mlops-service 8000:8000"
+          Start-Sleep -Seconds 10
 
       - name: Smoke Test
         run: curl -f http://localhost:8000/health

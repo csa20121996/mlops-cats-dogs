@@ -55,7 +55,6 @@ jobs:
               exit 1
           }
 
-          exit 0
 
 #      - name: Get Service URL
 #        shell: powershell

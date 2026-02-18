@@ -29,7 +29,9 @@ jobs:
           Start-Sleep -Seconds 10
 
       - name: Smoke Test
-        run: curl http://localhost:8000/health
+        run: |
+          $response = Invoke-WebRequest -Uri http://localhost:8000/health
+          if ($response.StatusCode -ne 200) { exit 1 }
 
       - name: Rollback on Failure
         if: failure()

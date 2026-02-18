@@ -10,29 +10,28 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Pull Latest Image
-        run: |
-          docker pull ghcr.io/${{ github.repository }}:latest
+      - name: Check Kubernetes
+        run: kubectl get nodes
 
-      - name: Update Deployment Image
+      - name: Pull Latest Image
+        run: docker pull ghcr.io/${{ github.repository }}:latest
+
+      - name: Update Deployment
         run: |
           kubectl set image deployment/mlops-app \
           mlops-container=ghcr.io/${{ github.repository }}:latest
 
       - name: Wait for Rollout
-        run: |
-          kubectl rollout status deployment/mlops-app
+        run: kubectl rollout status deployment/mlops-app
 
       - name: Port Forward
         run: |
           kubectl port-forward service/mlops-service 8000:8000 &
-          sleep 5
+          sleep 10
 
       - name: Smoke Test
-        run: |
-          curl -f http://localhost:8000/health
+        run: curl -f http://localhost:8000/health
 
       - name: Rollback on Failure
         if: failure()
-        run: |
-          kubectl rollout undo deployment/mlops-app
+        run: kubectl rollout undo deployment/mlops-app

@@ -1,10 +1,3 @@
-name: CD - Deploy to Local Kubernetes
-
-on:
-  push:
-    branches:
-      - main
-
 jobs:
   deploy:
     runs-on: self-hosted
@@ -17,20 +10,18 @@ jobs:
         run: docker pull ghcr.io/${{ github.repository }}:latest
 
       - name: Update Deployment
-        run: |
-          kubectl set image deployment/mlops-app \
-          mlops-container=ghcr.io/${{ github.repository }}:latest
+        run: kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:latest
 
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app
 
       - name: Port Forward
         run: |
-          kubectl port-forward service/mlops-service 8000:8000 &
-          sleep 10
+          Start-Process kubectl -ArgumentList "port-forward service/mlops-service 8000:8000"
+          Start-Sleep -Seconds 10
 
       - name: Smoke Test
-        run: curl -f http://localhost:8000/health
+        run: curl http://localhost:8000/health
 
       - name: Rollback on Failure
         if: failure()

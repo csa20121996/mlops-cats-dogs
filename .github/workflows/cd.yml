@@ -9,75 +9,50 @@ jobs:
   deploy:
     runs-on: self-hosted
 
+    defaults:
+      run:
+        shell: cmd
+
     steps:
       - name: Check Kubernetes
         run: kubectl get nodes
 
       - name: Pull Latest Image
-        run: docker pull ghcr.io/${{ github.repository }}:latest
+        run: docker pull ghcr.io/%GITHUB_REPOSITORY%:latest
 
       - name: Update Deployment
-        run: |
-          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:latest
+        run: kubectl set image deployment/mlops-app mlops-container=ghcr.io/%GITHUB_REPOSITORY%:latest
 
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app
 
       - name: Port Forward
         run: |
-          Start-Process kubectl -ArgumentList "port-forward service/mlops-service 8000:8000"
-          Start-Sleep -Seconds 10
+          start "" kubectl port-forward service/mlops-service 8000:8000
+          timeout /t 10
 
       - name: Smoke Test via Minikube Service
-        shell: powershell
         run: |
-          Write-Host "Fetching service URL..."
+          echo Fetching service URL...
 
-          # Run minikube service but ignore its exit code
-          $url = (minikube service mlops-service --url 2>$null | Select-Object -First 1).Trim()
+          FOR /F "tokens=*" %%i IN ('minikube service mlops-service --url') DO (
+              set SERVICE_URL=%%i
+              goto :done
+          )
+          :done
 
-          Write-Host "Service URL: $url"
-          $healthUrl = "$url/health"
-          Write-Host "Testing: $healthUrl"
+          echo Service URL: %SERVICE_URL%
+          set HEALTH_URL=%SERVICE_URL%/health
+          echo Testing: %HEALTH_URL%
 
-          try {
-              $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 20
-              Write-Host "StatusCode: $($response.StatusCode)"
-              Write-Host "Body: $($response.Content)"
+          curl -f %HEALTH_URL%
+          if errorlevel 1 (
+              echo Smoke test failed!
+              exit /b 1
+          )
 
-              if ($response.StatusCode -ne 200) {
-                  throw "Health endpoint returned non-200"
-              }
-          }
-          catch {
-              Write-Host "Smoke test failed:"
-              Write-Host $_.Exception.Message
-              exit 1
-          }
-
-          exit 0
-
-#      - name: Get Service URL
-#        shell: powershell
-#        run: |
-#          $url = (minikube service mlops-service --url | Select-Object -First 1).Trim()
-#          Write-Host "Service URL detected: $url"
-#          Add-Content -Path $env:GITHUB_ENV -Value "SERVICE_URL=$url"
-#
-#      - name: Smoke Test
-#        shell: powershell
-#        run: |
-#          Write-Host "Testing $env:SERVICE_URL/health"
-#          try {
-#            $r = Invoke-WebRequest -Uri "$env:SERVICE_URL/health" -UseBasicParsing -TimeoutSec 15
-#            Write-Host "StatusCode=$($r.StatusCode)"
-#            Write-Host "Body=$($r.Content)"
-#            if ($r.StatusCode -ne 200) { throw "Non-200 status code" }
-#          } catch {
-#            Write-Host "Smoke test failed:"
-#            Write-Host $_.Exception.Message
-#            exit 1
-#          }
+          echo Smoke test passed!
+          exit /b 0
 
       - name: Rollback on Failure
         if: failure()

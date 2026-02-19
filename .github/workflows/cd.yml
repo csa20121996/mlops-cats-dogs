@@ -8,7 +8,6 @@ on:
 
 jobs:
   deploy:
-    # Only deploy when CI succeeded AND it was the CI run for main (merge commit)
     if: |
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main'
@@ -22,17 +21,13 @@ jobs:
       - name: Check Kubernetes
         run: kubectl get nodes
 
-      - name: Set Image (from CI head SHA)
-        run: |
-          echo IMAGE=ghcr.io/${{ github.repository }}:${{ github.event.workflow_run.head_sha }}>> %GITHUB_ENV%
-          echo Deploying ghcr.io/${{ github.repository }}:${{ github.event.workflow_run.head_sha }}
+      - name: Pull Release Image (v<CI run_number>)
+        run: docker pull ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
 
-      - name: Pull Image (fail fast if missing)
-        run: docker pull ghcr.io/${{ github.repository }}:${{ github.event.workflow_run.head_sha }}
-
-      - name: Deploy
+      - name: Deploy Release Image
         run: |
-          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:${{ github.event.workflow_run.head_sha }}
+          echo Deploying ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
+          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
 
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=180s

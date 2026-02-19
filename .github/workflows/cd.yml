@@ -17,10 +17,10 @@ jobs:
       - name: Check Kubernetes
         run: kubectl get nodes
 
-      - name: Deploy New Image (Using Commit SHA)
+      - name: Deploy New Image
         run: |
-          echo Updating deployment with image tag %GITHUB_SHA%
-          kubectl set image deployment/mlops-app mlops-container=ghcr.io/%GITHUB_REPOSITORY%:%GITHUB_SHA%
+          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:${{ github.sha }}
+      
 
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=120s

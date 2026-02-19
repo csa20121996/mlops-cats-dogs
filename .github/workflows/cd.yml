@@ -7,7 +7,6 @@ on:
 
 jobs:
   deploy:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: self-hosted
 
     defaults:
@@ -19,15 +18,15 @@ jobs:
         run: kubectl get nodes
 
       - name: Set Image Version
-        run: echo VERSION=v${{ github.event.workflow_run.run_number }} >> %GITHUB_ENV%
+        run: echo VERSION=v${{ github.run_number }} >> %GITHUB_ENV%
 
-      - name: Pull Image From GHCR (Fail Fast If Missing)
-        run: docker pull ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
+      - name: Pull Image From GHCR
+        run: docker pull ghcr.io/${{ github.repository }}:v${{ github.run_number }}
 
       - name: Deploy New Version
         run: |
-          echo Deploying ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
-          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
+          echo Deploying ghcr.io/${{ github.repository }}:v${{ github.run_number }}
+          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:v${{ github.run_number }}
 
       - name: Wait For Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=180s
@@ -36,7 +35,7 @@ jobs:
         run: kubectl get deployment mlops-app -o=jsonpath="{.spec.template.spec.containers[0].image}"
 
       # -----------------------------
-      # SMOKE TEST (Inside Cluster)
+      # SMOKE TEST
       # -----------------------------
       - name: Smoke Test - Health Endpoint
         run: |

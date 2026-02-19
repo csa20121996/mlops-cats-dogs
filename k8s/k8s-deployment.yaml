@@ -13,9 +13,36 @@ spec:
       labels:
         app: mlops
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: mlops-container
           image: ghcr.io/csa20121996/mlops-cats-dogs:initial
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
+
+          # Optional but recommended if app startup is slow/unreliable
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 5
+            failureThreshold: 24   # gives ~120s (24*5s) to start
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 12
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6

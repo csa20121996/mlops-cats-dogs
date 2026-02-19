@@ -5,12 +5,12 @@ on:
     workflows: ["CI - Build, Test & Push"]
     types:
       - completed
+    branches:
+      - main
 
 jobs:
   deploy:
-    if: |
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: self-hosted
 
     defaults:
@@ -32,16 +32,22 @@ jobs:
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=180s
 
-      - name: Smoke Test (inside cluster)
+      - name: Smoke Test - Health Endpoint (retry)
         run: |
-          echo Running smoke test...
-          kubectl run smoke-test --rm -i --restart=Never --image=curlimages/curl -- ^
-            curl -f http://mlops-service:8000/health
-          if errorlevel 1 (
-            echo Smoke test failed!
-            exit /b 1
+          echo Running smoke test with retries...
+          for /L %%i in (1,1,12) do (
+            echo Attempt %%i...
+            kubectl run smoke-test --rm -i --restart=Never --image=curlimages/curl -- ^
+              curl -f http://mlops-service:8000/health
+            if not errorlevel 1 (
+              echo Smoke test passed!
+              exit /b 0
+            )
+            echo Not ready yet. Waiting 10s...
+            timeout /t 10 /nobreak >nul
           )
-          echo Smoke test passed!
+          echo Smoke test failed after retries!
+          exit /b 1
 
       - name: Rollback on Failure
         if: failure()

@@ -1,12 +1,14 @@
 name: CD - Deploy to Local Kubernetes
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI & Release"]
+    types:
+      - completed
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: self-hosted
 
     defaults:
@@ -14,24 +16,33 @@ jobs:
         shell: cmd
 
     steps:
-      - name: Check Kubernetes
+      - name: Check Kubernetes Cluster
         run: kubectl get nodes
 
-      - name: Deploy New Image
+      - name: Set Image Version
+        run: echo VERSION=v${{ github.event.workflow_run.run_number }} >> %GITHUB_ENV%
+
+      - name: Pull Image From GHCR (Fail Fast If Missing)
+        run: docker pull ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
+
+      - name: Deploy New Version
         run: |
-          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:${{ github.sha }}
-      
+          echo Deploying ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
+          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
 
-      - name: Wait for Rollout
-        run: kubectl rollout status deployment/mlops-app --timeout=120s
+      - name: Wait For Rollout
+        run: kubectl rollout status deployment/mlops-app --timeout=180s
 
-      - name: Show Rollout History
-        run: kubectl rollout history deployment/mlops-app
+      - name: Show Current Deployment Image
+        run: kubectl get deployment mlops-app -o=jsonpath="{.spec.template.spec.containers[0].image}"
 
-      - name: Smoke Test (Cluster Internal)
+      # -----------------------------
+      # SMOKE TEST (Inside Cluster)
+      # -----------------------------
+      - name: Smoke Test - Health Endpoint
         run: |
-          echo Running health check inside cluster...
-          kubectl run curl-test --rm -i --restart=Never --image=curlimages/curl -- ^
+          echo Running smoke test...
+          kubectl run smoke-test --rm -i --restart=Never --image=curlimages/curl -- ^
             curl -f http://mlops-service:8000/health
           if errorlevel 1 (
               echo Smoke test failed!
@@ -39,9 +50,12 @@ jobs:
           )
           echo Smoke test passed!
 
+      # -----------------------------
+      # AUTOMATIC ROLLBACK
+      # -----------------------------
       - name: Rollback on Failure
         if: failure()
         run: |
-          echo Rolling back to previous revision...
+          echo Rolling back to previous version...
           kubectl rollout undo deployment/mlops-app
-          kubectl rollout status deployment/mlops-app --timeout=120s
+          kubectl rollout status deployment/mlops-app --timeout=180s

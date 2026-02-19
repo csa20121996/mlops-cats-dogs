@@ -17,43 +17,31 @@ jobs:
       - name: Check Kubernetes
         run: kubectl get nodes
 
-      - name: Pull Latest Image
-        run: docker pull ghcr.io/%GITHUB_REPOSITORY%:latest
-
-      - name: Update Deployment
-        run: kubectl set image deployment/mlops-app mlops-container=ghcr.io/%GITHUB_REPOSITORY%:latest
+      - name: Deploy New Image (Using Commit SHA)
+        run: |
+          echo Updating deployment with image tag %GITHUB_SHA%
+          kubectl set image deployment/mlops-app mlops-container=ghcr.io/%GITHUB_REPOSITORY%:%GITHUB_SHA%
 
       - name: Wait for Rollout
-        run: kubectl rollout status deployment/mlops-app
+        run: kubectl rollout status deployment/mlops-app --timeout=120s
 
-      - name: Port Forward
+      - name: Show Rollout History
+        run: kubectl rollout history deployment/mlops-app
+
+      - name: Smoke Test (Cluster Internal)
         run: |
-          start "" kubectl port-forward service/mlops-service 8000:8000
-          timeout /t 10
-
-      - name: Smoke Test via Minikube Service
-        run: |
-          echo Fetching service URL...
-
-          FOR /F "tokens=*" %%i IN ('minikube service mlops-service --url') DO (
-              set SERVICE_URL=%%i
-              goto :done
-          )
-          :done
-
-          echo Service URL: %SERVICE_URL%
-          set HEALTH_URL=%SERVICE_URL%/health
-          echo Testing: %HEALTH_URL%
-
-          curl -f %HEALTH_URL%
+          echo Running health check inside cluster...
+          kubectl run curl-test --rm -i --restart=Never --image=curlimages/curl -- ^
+            curl -f http://mlops-service:8000/health
           if errorlevel 1 (
               echo Smoke test failed!
               exit /b 1
           )
-
           echo Smoke test passed!
-          exit /b 0
 
       - name: Rollback on Failure
         if: failure()
-        run: kubectl rollout undo deployment/mlops-app
+        run: |
+          echo Rolling back to previous revision...
+          kubectl rollout undo deployment/mlops-app
+          kubectl rollout status deployment/mlops-app --timeout=120s

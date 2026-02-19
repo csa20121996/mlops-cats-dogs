@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: mlops-app
 spec:
+  revisionHistoryLimit: 5
   replicas: 1
   selector:
     matchLabels:
@@ -14,6 +15,7 @@ spec:
     spec:
       containers:
         - name: mlops-container
-          image: ghcr.io/csa20121996/mlops-cats-dogs:latest
+          image: ghcr.io/csa20121996/mlops-cats-dogs:initial
+          imagePullPolicy: Always
           ports:
             - containerPort: 8000

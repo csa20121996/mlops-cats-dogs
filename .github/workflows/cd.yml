@@ -3,7 +3,7 @@ name: CD - Deploy to Local Kubernetes
 on:
   push:
     branches:
-      - main
+      - main   # Only deploy when code reaches main
 
 jobs:
   deploy:
@@ -17,16 +17,13 @@ jobs:
       - name: Check Kubernetes Cluster
         run: kubectl get nodes
 
-      - name: Set Image Version
-        run: echo VERSION=v${{ github.run_number }} >> %GITHUB_ENV%
-
-      - name: Pull Image From GHCR
-        run: docker pull ghcr.io/${{ github.repository }}:v${{ github.run_number }}
+      - name: Pull Image Built By CI
+        run: docker pull ghcr.io/${{ github.repository }}:${{ github.sha }}
 
       - name: Deploy New Version
         run: |
-          echo Deploying ghcr.io/${{ github.repository }}:v${{ github.run_number }}
-          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:v${{ github.run_number }}
+          echo Deploying ghcr.io/${{ github.repository }}:${{ github.sha }}
+          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:${{ github.sha }}
 
       - name: Wait For Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=180s
@@ -35,7 +32,7 @@ jobs:
         run: kubectl get deployment mlops-app -o=jsonpath="{.spec.template.spec.containers[0].image}"
 
       # -----------------------------
-      # SMOKE TEST
+      # SMOKE TEST (Inside Cluster)
       # -----------------------------
       - name: Smoke Test - Health Endpoint
         run: |

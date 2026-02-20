@@ -162,3 +162,6 @@ Metrics logged:
   - artifacts: confusion matrix + loss curves
 - `src/inference/app.py` loads the model via `state_dict` to match training export.
 - `.dockerignore` excludes `data/` and `mlruns/` to keep image builds clean.
+
+
+minikube service -n monitoring grafana --url

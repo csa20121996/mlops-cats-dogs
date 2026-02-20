@@ -1,9 +1,10 @@
 name: CD - Deploy to Local Kubernetes
 
 on:
-  push:
-    branches:
-      - "**" # any branch
+  workflow_run:
+    workflows: [ "CI - Build, Test & Push" ]
+    types:
+      - completed
 
 jobs:
   deploy:

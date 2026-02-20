@@ -3,10 +3,8 @@ name: CD - Deploy to Local Kubernetes
 on:
   workflow_run:
     workflows: ["CI - Build, Test & Push"]
-    types:
-      - completed
-    branches:
-      - main
+    types: [completed]
+    branches: [main]
 
 jobs:
   deploy:
@@ -32,13 +30,18 @@ jobs:
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=180s
 
-      - name: Smoke Test - Health Endpoint (retry)
+      - name: Smoke Test - Health + Predict (in-cluster)
         run: |
           echo Running smoke test with retries...
           for /L %%i in (1,1,12) do (
             echo Attempt %%i...
-            kubectl run smoke-test --rm -i --restart=Never --image=curlimages/curl -- ^
-              curl -f http://mlops-service:8000/health
+
+            kubectl run smoke-test --rm -i --restart=Never --image=alpine:3.20 -- ^
+              sh -c "apk add --no-cache curl > /dev/null && ^
+                    echo iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC | base64 -d > /tmp/smoke.png && ^
+                    curl -fsS http://mlops-service:8000/health && ^
+                    curl -fsS -F file=@/tmp/smoke.png http://mlops-service:8000/predict"
+
             if not errorlevel 1 (
               echo Smoke test passed!
               exit /b 0

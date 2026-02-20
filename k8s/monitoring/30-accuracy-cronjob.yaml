@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: post-deploy-accuracy
+  namespace: monitoring
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: monitor
+              # Use the same image as your deployed app, so the script + smoke images are present.
+              # If your CD workflow updates the app image tag, update this tag too (or use :latest).
+              image: ghcr.io/csa20121996/mlops-cats-dogs:latest
+              imagePullPolicy: Always
+              env:
+                - name: API_URL
+                  value: "http://mlops-service.default.svc.cluster.local:8000/predict"
+                - name: MLFLOW_TRACKING_URI
+                  value: "http://host.minikube.internal:5000"
+                - name: TEST_DIR
+                  value: "/app/tests/smoke_data"
+              command: ["python", "monitoring/monitor_accuracy.py"]

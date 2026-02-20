@@ -3,7 +3,7 @@ name: CI - Build, Test & Push
 on:
   push:
     branches:
-      - "**" # any branch
+      - "abc" # any branch
 
 jobs:
   build-test-push:

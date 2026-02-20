@@ -28,6 +28,12 @@ jobs:
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=180s
 
+      - name: Small wait after rollout
+        shell: cmd
+        run: |
+          echo Waiting 5 seconds for service endpoints to settle...
+          ping -n 6 127.0.0.1 >nul
+
       - name: Smoke Test - Health + Predict (in-cluster)
         shell: cmd
         run: |
@@ -40,7 +46,7 @@ jobs:
               exit /b 0
             )
             echo Not ready yet. Waiting 10s...
-            timeout /t 10 /nobreak >nul
+            ping -n 11 127.0.0.1 >nul
           )
           echo Smoke test failed after retries!
           exit /b 1

@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["CI - Build, Test & Push"]
     types: [completed]
-    branches: [main]
+    branches: ['**']
 
 jobs:
   deploy:

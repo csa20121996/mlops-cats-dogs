@@ -165,3 +165,10 @@ Metrics logged:
 
 
 minikube service -n monitoring grafana --url
+
+
+
+kubectl apply -f k8s/monitoring/30-accuracy-cronjob.yaml
+
+mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri file:./mlruns --default-artifact-root ./mlruns
+

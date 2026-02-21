@@ -5,6 +5,9 @@ metadata:
   namespace: monitoring
 spec:
   schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       template:
@@ -12,9 +15,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: monitor
-              # Use the same image as your deployed app, so the script + smoke images are present.
-              # If your CD workflow updates the app image tag, update this tag too (or use :latest).
-              image: ghcr.io/csa20121996/mlops-cats-dogs:latest
+              image: ghcr.io/csa20121996/mlops-cats-dogs:v26-test
               imagePullPolicy: Always
               env:
                 - name: API_URL
@@ -23,4 +24,12 @@ spec:
                   value: "http://host.minikube.internal:5000"
                 - name: TEST_DIR
                   value: "/app/tests/smoke_data"
-              command: ["python", "monitoring/monitor_accuracy.py"]
+              volumeMounts:
+                - name: monitor-script
+                  mountPath: /tmp/monitor_accuracy.py
+                  subPath: monitor_accuracy.py
+              command: ["python", "/tmp/monitor_accuracy.py"]
+          volumes:
+            - name: monitor-script
+              configMap:
+                name: post-deploy-accuracy-script

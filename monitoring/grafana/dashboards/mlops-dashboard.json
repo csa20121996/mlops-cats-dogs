@@ -6,7 +6,7 @@
       "title": "Total Requests",
       "targets": [
         {
-          "expr": "request_count"
+          "expr": "request_count_total"
         }
       ],
       "datasource": "Prometheus"

@@ -1,4 +1,9 @@
 # MLOps Assignment 2 (Group 121) — Cats vs Dogs
+1.	Chandra Shekar A	    2024AB05298
+2.	Manish Agarkhed         2024AA05342   
+3.	Torit Jyoti Dey	        2024AA05345
+4.	Tanmay Sur	            2024AA05525
+5.	Varsha Dasgupta	        2024AA05526
 
 This project implements an end-to-end MLOps workflow for a Cats vs Dogs classifier:
 

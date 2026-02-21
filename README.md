@@ -206,7 +206,7 @@ CD runs on the self-hosted runner:
 
 ### 9.1 Configure self-hosted runner (Windows)
 Follow GitHub’s official instructions:
-- <ADD YOUR LINK OR SHORT STEPS HERE>
+- https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners
 
 Start runner:
 ```bat

@@ -17,13 +17,13 @@ jobs:
       - name: Check Kubernetes
         run: kubectl get nodes
 
-      - name: Pull Release Image (v28-test)
-        run: docker pull ghcr.io/${{ github.repository }}:v28-test
+      - name: Pull Release Image (v<ci_run_number>)
+        run: docker pull ghcr.io/${{ github.repository }}::v${{ github.event.workflow_run.run_number }}
 
-      - name: Deploy Release Image (v28-test)
+      - name: Deploy Release Image (v<ci_run_number>)
         run: |
-          echo Deploying ghcr.io/${{ github.repository }}:v28-test
-          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:v28-test
+          echo Deploying ghcr.io/${{ github.repository }}::v${{ github.event.workflow_run.run_number }}
+          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}::v${{ github.event.workflow_run.run_number }}
 
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=180s

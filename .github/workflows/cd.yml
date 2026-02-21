@@ -1,12 +1,16 @@
 name: CD - Deploy to Local Kubernetes
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI - Build, Test & Push"]
+    types:
+      - completed
     branches:
-      - "**" # any branch
+      - main
 
 jobs:
   deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: self-hosted
 
     defaults:
@@ -17,13 +21,13 @@ jobs:
       - name: Check Kubernetes
         run: kubectl get nodes
 
-      - name: Pull Release Image (v<ci_run_number>)
-        run: docker pull ghcr.io/${{ github.repository }}::v${{ github.event.workflow_run.run_number }}
+      - name: Pull Release Image (v<CI run_number>)
+        run: docker pull ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
 
-      - name: Deploy Release Image (v<ci_run_number>)
+      - name: Deploy Release Image (v<CI run_number>)
         run: |
-          echo Deploying ghcr.io/${{ github.repository }}::v${{ github.event.workflow_run.run_number }}
-          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}::v${{ github.event.workflow_run.run_number }}
+          echo Deploying ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
+          kubectl set image deployment/mlops-app mlops-container=ghcr.io/${{ github.repository }}:v${{ github.event.workflow_run.run_number }}
 
       - name: Wait for Rollout
         run: kubectl rollout status deployment/mlops-app --timeout=180s
